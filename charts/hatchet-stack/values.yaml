@@ -16,11 +16,14 @@ sharedConfig:
   serverAuthBasicAuthEnabled: "t" # allows login via basic auth (email/password)
   grpcBroadcastAddress: "localhost:7070" # the endpoint for the gRPC server, exposed via the `grpc` service
   grpcInsecure: "t" # allows gRPC to be served over http
-  defaultAdminEmail: "admin@example.com" # in exposed/production environments, change this to a valid email
-  defaultAdminPassword: "Admin123!!" # in exposed/production environments, change this to a secure password
+  # defaultAdminEmail: "admin@example.com" # in exposed/production environments, change this to a valid email
+  # defaultAdminPassword: "Admin123!!" # in exposed/production environments, change this to a secure password
 
   # you can set additional environment variables here, which will override any defaults
-  env: {}
+  env:
+    # bitnami postgresql container sets the default to GMT which causes crashes
+    DATABASE_ENFORCE_UTC_TIMEZONE: "false"
+
 
 api:
   enabled: true
@@ -31,6 +34,8 @@ api:
     pullPolicy: "IfNotPresent"
   # Retain failed Helm hook Jobs (currently the pre-upgrade migration hook) so logs survive for debugging.
   retainFailedHooks: true
+  quickstartJob:
+    enabled: true
   migrationJob:
     enabled: true
     # Number of retries before the migration Job is marked failed.
@@ -49,6 +54,11 @@ api:
         name: hatchet-shared-config
   ingress:
     enabled: false
+  deploymentEnvFrom:
+    - secretRef:
+        name: hatchet-config
+    # - secretRef:
+    #     name: hatchet-creds
   health:
     enabled: true
     spec:
@@ -74,7 +84,9 @@ engine:
     tag: "v0.84.0"
     pullPolicy: "IfNotPresent"
   setupJob:
-    enabled: false
+    enabled: true
+  quickstartJob:
+    enabled: true
   migrationJob:
     enabled: false
   service:
@@ -85,12 +97,17 @@ engine:
   deployment:
     annotations:
       app.kubernetes.io/name: hatchet-engine
+  deploymentEnvFrom:
+    - secretRef:
+        name: hatchet-config
   serviceAccount:
     create: true
     name: hatchet-engine
   envFrom:
     - secretRef:
         name: hatchet-shared-config
+    # - secretRef:
+    #     name: hatchet-creds
   ingress:
     enabled: false
   health:
@@ -157,7 +174,7 @@ rabbitmq:
       amqp: 5672
 
 caddy:
-  enabled: false
+  enabled: true
   image:
     repository: "caddy"
     tag: "2.7.6-alpine"

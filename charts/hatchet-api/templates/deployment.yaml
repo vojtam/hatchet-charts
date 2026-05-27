@@ -41,6 +41,15 @@ spec:
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ required "Please set a value for .Values.image.tag" (coalesce .Values.sharedConfig.image.tag .Values.image.tag) }}"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          runAsNonRoot: true
+          runAsUser: {{ .Values.securityContext.runAsUser }}
+          seccompProfile:
+            type: RuntimeDefault
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command: {{ .Values.commandline.command }}
         {{- if .Values.commandline.args }}
@@ -89,7 +98,14 @@ spec:
         - "--port=5432"
         - "{{ .Values.cloudSQLSidecar.address }}"
         securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
           runAsNonRoot: true
+          runAsUser: {{ .Values.securityContext.runAsUser }}
+          seccompProfile:
+            type: RuntimeDefault
         resources:
 {{ toYaml .Values.cloudSQLSidecar.resources | indent 10 }}
 {{- end }}
